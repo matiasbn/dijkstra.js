@@ -1,8 +1,65 @@
 {
   "version": 1,
-  "projects": {},
+  "projects": {
+    "dijkstra": {
+      "root": "apps/dijkstra",
+      "sourceRoot": "apps/dijkstra/src",
+      "projectType": "application",
+      "prefix": "dijkstra",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@nrwl/node:build",
+          "options": {
+            "outputPath": "dist/apps/dijkstra",
+            "main": "apps/dijkstra/src/main.ts",
+            "tsConfig": "apps/dijkstra/tsconfig.app.json",
+            "assets": ["apps/dijkstra/src/assets"]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/dijkstra/src/environments/environment.ts",
+                  "with": "apps/dijkstra/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@nrwl/node:execute",
+          "options": {
+            "buildTarget": "dijkstra:build"
+          }
+        },
+        "lint": {
+          "builder": "@nrwl/linter:lint",
+          "options": {
+            "linter": "eslint",
+            "tsConfig": [
+              "apps/dijkstra/tsconfig.app.json",
+              "apps/dijkstra/tsconfig.spec.json"
+            ],
+            "exclude": ["**/node_modules/**", "!apps/dijkstra/**/*"]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/dijkstra/jest.config.js",
+            "tsConfig": "apps/dijkstra/tsconfig.spec.json",
+            "passWithNoTests": true
+          }
+        }
+      }
+    }
+  },
   "cli": {
-    "defaultCollection": "@nrwl/workspace"
+    "defaultCollection": "@nrwl/nest"
   },
   "schematics": {
     "@nrwl/workspace": {
@@ -62,5 +119,6 @@
         "linter": "eslint"
       }
     }
-  }
+  },
+  "defaultProject": "dijkstra"
 }
