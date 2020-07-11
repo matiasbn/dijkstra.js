@@ -68,4 +68,9 @@ export class ApiService {
     const createdRoutes = await this.routeRepository.createRoutes(routes);
     return createdRoutes;
   }
+
+  async shortestPath(origin: string, destination: string): Promise<{}> {
+    const adjacentNode = await this.routeRepository.getAdjacentNodes(origin);
+    return { adjacentNode };
+  }
 }

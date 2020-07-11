@@ -16,4 +16,8 @@ export class RouteRepository {
   deleteRoutes(): Promise<void> {
     return this.routeModel.deleteMany({});
   }
+
+  getAdjacentNodes(node: string): Promise<Route[]> {
+    return this.routeModel.find({ route: new RegExp(node) });
+  }
 }
