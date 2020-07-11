@@ -1,12 +1,13 @@
-import { Controller, Get, Req, Request, Res, Response } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { AppService } from './app.service';
+import { Nodes } from '../validators/validator';
 
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Get('generate-data')
-  generateText(@Req() request: Request) {
-    return this.appService.generateData(request);
+  @Post('generate-data')
+  generateText(@Body() body: Nodes) {
+    return this.appService.generateData(body.nodes);
   }
 }
