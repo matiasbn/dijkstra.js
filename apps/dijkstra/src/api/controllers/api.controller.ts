@@ -1,10 +1,10 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { AppService } from './app.service';
-import { Nodes } from './validators/validator';
+import { ApiService } from '../services/api.service';
+import { Nodes } from '../validators/validator';
 
 @Controller()
-export class AppController {
-  constructor(private readonly appService: AppService) {}
+export class ApiController {
+  constructor(private readonly appService: ApiService) {}
 
   @Post('generate-data')
   generateText(@Body() body: Nodes) {
