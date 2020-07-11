@@ -13,6 +13,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ApiModule } from './api/api.module';
 import { MorganModule, MorganInterceptor } from 'nest-morgan';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { AppController } from './app.controller';
 
 class ExtendedLogger extends Logger {
   write(message: string, trace: string) {
@@ -53,6 +54,7 @@ class ExtendedLogger extends Logger {
       }),
     }),
   ],
+  controllers: [AppController],
   providers: [
     {
       provide: APP_INTERCEPTOR,

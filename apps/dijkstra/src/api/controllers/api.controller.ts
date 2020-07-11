@@ -2,7 +2,7 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { ApiService } from '../services/api.service';
 import { Nodes } from '../validators/validator';
 
-@Controller()
+@Controller('dijkstra')
 export class ApiController {
   constructor(private readonly appService: ApiService) {}
 
