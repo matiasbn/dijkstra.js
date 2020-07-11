@@ -1,6 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { AppService } from './app.service';
-import { Nodes } from '../validators/validator';
+import { Nodes } from './validators/validator';
 
 @Controller()
 export class AppController {
