@@ -1,14 +1,29 @@
-import { Module } from '@nestjs/common';
+import {
+  Logger,
+  MiddlewareConsumer,
+  Module,
+  RequestMethod,
+} from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
+import * as helmet from 'helmet';
 import { utilities as nestWinstonModuleUtilities } from 'nest-winston/dist/winston.utilities';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ApiModule } from './api/api.module';
+import { MorganModule, MorganInterceptor } from 'nest-morgan';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+
+class ExtendedLogger extends Logger {
+  write(message: string, trace: string) {
+    super.log(message, trace);
+  }
+}
 
 @Module({
   imports: [
     ApiModule,
+    MorganModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -27,7 +42,6 @@ import { ApiModule } from './api/api.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        level: config.get<string>('LOGGER_LEVEL'),
         transports: [
           new winston.transports.Console({
             format: winston.format.combine(
@@ -39,5 +53,24 @@ import { ApiModule } from './api/api.module';
       }),
     }),
   ],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: MorganInterceptor('common', { stream: new ExtendedLogger() }),
+    },
+  ],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(helmet())
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
+    consumer
+      .apply(
+        helmet.hsts({
+          maxAge: 8000000,
+        })
+      )
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
+  }
+}
