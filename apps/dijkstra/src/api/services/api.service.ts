@@ -1,12 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { Logger, stream } from 'winston';
+import { Injectable, Logger } from '@nestjs/common';
 import { RouteRepository } from '../repositories/route.repository';
 import { Route } from '../domain/routes.schema';
 
 @Injectable()
 export class ApiService {
   constructor(
-    @Inject('winston') private readonly logger: Logger,
+    private readonly logger: Logger,
     private readonly routeRepository: RouteRepository
   ) {}
 
@@ -18,8 +17,7 @@ export class ApiService {
       for (const alpha of alphabet) {
         if (alpha > letter) {
           const route: Route = {
-            origin: letter,
-            destination: alpha,
+            route: `${letter}${alpha}`,
             distance: Math.floor(Math.random() * 100),
           };
           distances.push(route);
@@ -60,10 +58,9 @@ export class ApiService {
         return result;
       }, {});
 
-    const routes = Object.keys(distances).map((distance) => {
+    const routes: Route[] = Object.keys(distances).map((distance) => {
       return {
-        origin: distance[0],
-        destination: distance[1],
+        route: distance,
         distance: distances[distance],
       };
     });
