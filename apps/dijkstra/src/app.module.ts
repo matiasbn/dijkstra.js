@@ -16,8 +16,8 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 
 class ExtendedLogger extends Logger {
-  write(message: string, trace: string) {
-    super.log(message, trace);
+  write(message: string) {
+    super.log(message.trim());
   }
 }
 

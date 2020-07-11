@@ -1,4 +1,4 @@
-import { IsNotEmpty, Max } from 'class-validator';
+import { IsMimeType, IsNotEmpty, IsObject, Max } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class Nodes {
@@ -6,4 +6,10 @@ export class Nodes {
   @Max(26)
   @IsNotEmpty()
   readonly nodes: number;
+}
+
+export class File {
+  @IsObject()
+  @IsNotEmpty()
+  readonly file: object;
 }
