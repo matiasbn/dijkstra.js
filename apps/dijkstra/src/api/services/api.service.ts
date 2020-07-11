@@ -70,7 +70,11 @@ export class ApiService {
   }
 
   async shortestPath(origin: string, destination: string): Promise<{}> {
-    const adjacentNode = await this.routeRepository.getAdjacentNodes(origin);
-    return { adjacentNode };
+    const adjacentNodes = await this.routeRepository.getAdjacentNodes(origin);
+    const shortestPaths = {};
+    for (const node of adjacentNodes) {
+      console.log(node);
+    }
+    return { adjacentNodes };
   }
 }

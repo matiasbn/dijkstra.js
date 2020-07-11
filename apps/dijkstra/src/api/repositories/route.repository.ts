@@ -18,6 +18,9 @@ export class RouteRepository {
   }
 
   getAdjacentNodes(node: string): Promise<Route[]> {
-    return this.routeModel.find({ route: new RegExp(node) });
+    return this.routeModel.find(
+      { route: new RegExp(node) },
+      { route: true, distance: true, _id: false }
+    );
   }
 }

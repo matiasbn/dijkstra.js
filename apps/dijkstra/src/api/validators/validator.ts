@@ -1,10 +1,4 @@
-import {
-  IsAlpha,
-  IsNotEmpty,
-  IsNotEmptyObject,
-  Max,
-  MaxLength,
-} from 'class-validator';
+import { IsAlpha, IsDefined, IsNotEmpty, Length, Max } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class Nodes {
@@ -14,21 +8,22 @@ export class Nodes {
   readonly nodes: number;
 }
 
+//TODO checkear si es que viene el file
 export class File {
-  @IsNotEmptyObject()
-  readonly file: object;
+  @IsDefined()
+  readonly buffer: object;
 }
 
 export class ShortestPath {
   @Transform((origin) => origin.toUpperCase())
   @IsAlpha()
-  @MaxLength(1)
+  @Length(1, 1)
   @IsNotEmpty()
   readonly origin: string;
 
   @Transform((destination) => destination.toUpperCase())
   @IsAlpha()
-  @MaxLength(1)
+  @Length(1, 1)
   @IsNotEmpty()
   readonly destination: string;
 }
