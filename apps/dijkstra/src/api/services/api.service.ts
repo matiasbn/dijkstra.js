@@ -100,11 +100,23 @@ export class ApiService {
     const redisClient = await this.redisClient();
     const notVisitedNodes = (await redisClient.get('nodes')).split(',');
     const adjacentNodes = await this.routeRepository.getAdjacentNodes(origin);
+    const adjacentTable = notVisitedNodes.reduce((result, node) => {
+      if (node === origin) return result;
+      const routeName = origin < node ? `${origin}${node}` : `${node}${origin}`;
+      const distance =
+        adjacentNodes.find((node) => node.route === routeName)?.distance ||
+        Infinity;
+      result[node] = {
+        distance,
+        previous: '',
+      };
+      return result;
+    }, {});
+    const visitedNodes = [];
     const closestNode = adjacentNodes.sort(
       (nodeA, nodeB) => nodeA.distance - nodeB.distance
     )[0];
     const shortestPaths = {};
-    const visitedNodes = [];
-    return adjacentNodes;
+    return adjacentTable;
   }
 }
