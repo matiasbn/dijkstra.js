@@ -4,7 +4,6 @@ import {
   Get,
   HttpException,
   HttpStatus,
-  Inject,
   Post,
   Query,
   UploadedFile,
@@ -13,23 +12,6 @@ import {
 import { ApiService } from '../services/api.service';
 import { Nodes, ShortestPath, AllPaths } from '../validators/validator';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { token } from 'morgan';
-
-class DocumentFilter {
-  correctDocumentFilter = (req, file, callback) => {
-    if (!file.originalname.match(/\.(csv|txt)$/)) {
-      throw new HttpException(
-        {
-          status: HttpStatus.FORBIDDEN,
-          error: `Format not recognized`,
-        },
-        HttpStatus.FORBIDDEN
-      );
-      return callback(new Error('Only image files are allowed!'), false);
-    }
-    callback(null, true);
-  };
-}
 
 @Controller('dijkstra')
 export class ApiController {

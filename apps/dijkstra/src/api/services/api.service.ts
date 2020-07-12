@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { RouteRepository } from '../repositories/route.repository';
 import { Route } from '../domain/routes.schema';
 import { RedisService } from 'nestjs-redis';
@@ -129,6 +129,10 @@ export class ApiService {
         currentNode,
         notVisitedNodes
       );
+      if (!adjacentNodes.length) {
+        currentNode = notVisitedNodes[0];
+        continue;
+      }
       for (const adjacentNode of adjacentNodes) {
         const adjacentNodeIsClosest =
           adjacentNode.distance + adjacencyTable[currentNode].distance <
@@ -171,15 +175,6 @@ export class ApiService {
     const adjacentNodes = await this.routeRepository.getAdjacentNodes(
       notVisitedRoutes
     );
-    if (notVisitedNodes.length !== 0 && adjacentNodes.length === 0) {
-      throw new HttpException(
-        {
-          status: HttpStatus.FORBIDDEN,
-          error: `Unlinked path found origin: ${origin}, non visited node: [${notVisitedNodes}]`,
-        },
-        HttpStatus.FORBIDDEN
-      );
-    }
     return adjacentNodes.map((node) => {
       return {
         name: node.route.replace(origin, ''),
