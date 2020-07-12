@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { RouteRepository } from '../repositories/route.repository';
 import { Route } from '../domain/routes.schema';
 import { RedisService } from 'nestjs-redis';
@@ -106,10 +106,11 @@ export class ApiService {
     origin: string,
     destination: string = null
   ): Promise<Path[] | Path> {
-    const storedPaths = destination
-      ? await this.pathRepository.findSinglePath(origin, destination)
-      : await this.pathRepository.findPaths(origin);
-    if (storedPaths.length) return destination ? storedPaths[0] : storedPaths;
+    //TODO descomentar
+    // const storedPaths = destination
+    //   ? await this.pathRepository.findSinglePath(origin, destination)
+    //   : await this.pathRepository.findPaths(origin);
+    // if (storedPaths.length) return destination ? storedPaths[0] : storedPaths;
     const redisClient = await this.redisClient();
     const notVisitedNodes = (await redisClient.get('nodes')).split(',');
     const adjacencyTable = notVisitedNodes.reduce((result, node) => {
@@ -129,10 +130,10 @@ export class ApiService {
         notVisitedNodes
       );
       for (const adjacentNode of adjacentNodes) {
-        const adjacentIsClosest =
+        const adjacentNodeIsClosest =
           adjacentNode.distance + adjacencyTable[currentNode].distance <
           adjacencyTable[adjacentNode.name].distance;
-        if (adjacentIsClosest) {
+        if (adjacentNodeIsClosest) {
           adjacencyTable[adjacentNode.name].distance =
             adjacentNode.distance + adjacencyTable[currentNode].distance;
           adjacencyTable[adjacentNode.name].previous = currentNode;
@@ -170,9 +171,15 @@ export class ApiService {
     const adjacentNodes = await this.routeRepository.getAdjacentNodes(
       notVisitedRoutes
     );
-    //TODO arrojar error si es que hay un unlinked path
-    // if (!adjacentNodes)
-    //   return Promise.reject(`Unlinked path ${notVisitedRoutes}`);
+    if (notVisitedNodes.length !== 0 && adjacentNodes.length === 0) {
+      throw new HttpException(
+        {
+          status: HttpStatus.FORBIDDEN,
+          error: `Unlinked path found origin: ${origin}, non visited node: [${notVisitedNodes}]`,
+        },
+        HttpStatus.FORBIDDEN
+      );
+    }
     return adjacentNodes.map((node) => {
       return {
         name: node.route.replace(origin, ''),
