@@ -2,7 +2,13 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
 @Schema({ timestamps: true })
-export class Route extends Document {
+export class Path extends Document {
+  @Prop({ required: true })
+  origin: string;
+
+  @Prop({ required: true })
+  destination: string;
+
   @Prop({ required: true })
   route: string;
 
@@ -10,4 +16,4 @@ export class Route extends Document {
   distance: number;
 }
 
-export const RouteSchema = SchemaFactory.createForClass(Route);
+export const PathSchema = SchemaFactory.createForClass(Path);

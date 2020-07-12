@@ -2,11 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { RouteRepository } from '../repositories/route.repository';
 import { Route } from '../domain/routes.schema';
 import { RedisService } from 'nestjs-redis';
+import { Path } from '../domain/path.schema';
+import { PathRepository } from '../repositories/path.repository';
 
 @Injectable()
 export class ApiService {
   constructor(
     private readonly routeRepository: RouteRepository,
+    private readonly pathRepository: PathRepository,
     private readonly redisService: RedisService
   ) {}
 
@@ -32,7 +35,9 @@ export class ApiService {
       }
       return [...distances];
     }, []);
+
     await this.routeRepository.deleteRoutes();
+    await this.pathRepository.deletePaths();
     const createdRoutes = await this.routeRepository.createRoutes(adjacentList);
     const redisClient = await this.redisClient();
     const storedNodes = JSON.stringify([...Nodes])
@@ -84,6 +89,7 @@ export class ApiService {
       };
     });
     await this.routeRepository.deleteRoutes();
+    await this.pathRepository.deletePaths();
     const createdRoutes = await this.routeRepository.createRoutes(routes);
     const storedNodes = JSON.stringify([...Nodes])
       .replace(/"/g, '')
@@ -96,11 +102,12 @@ export class ApiService {
     });
   }
 
-  async shortestPath(
-    origin: string,
-    destination: string
-  ): Promise<{} | string> {
+  async dijkstra(origin: string, destination = null): Promise<Path[] | Path> {
     try {
+      const storedPaths = destination
+        ? await this.pathRepository.findSinglePath(origin, destination)
+        : await this.pathRepository.findPaths(origin);
+      if (storedPaths.length) return destination ? storedPaths[0] : storedPaths;
       const redisClient = await this.redisClient();
       const notVisitedNodes = (await redisClient.get('nodes')).split(',');
       const adjacentTable = notVisitedNodes.reduce((result, node) => {
@@ -111,6 +118,7 @@ export class ApiService {
         };
         return result;
       }, {});
+
       let currentNode = origin;
       while (notVisitedNodes.length) {
         notVisitedNodes.splice(notVisitedNodes.indexOf(currentNode), 1);
@@ -126,6 +134,8 @@ export class ApiService {
             adjacentTable[adjacentNode.name].distance =
               adjacentNode.distance + adjacentTable[currentNode].distance;
             adjacentTable[adjacentNode.name].previous = currentNode;
+            adjacentTable[adjacentNode.name].route =
+              adjacentTable[currentNode].route + adjacentNode.name;
           }
         }
         const closestNode = adjacentNodes.sort(
@@ -133,10 +143,20 @@ export class ApiService {
         )[0]?.name;
         currentNode = closestNode;
       }
-
-      return adjacentTable;
+      const paths: Path[] = Object.keys(adjacentTable).map((key) => {
+        const node = adjacentTable[key];
+        return {
+          origin: origin,
+          destination: key,
+          route: origin + node.route,
+          distance: node.distance,
+        };
+      });
+      await this.pathRepository.createPaths(paths);
+      return destination
+        ? paths.find((node) => node.destination === destination)
+        : paths;
     } catch (e) {
-      console.log(e);
       return e;
     }
   }
@@ -148,21 +168,14 @@ export class ApiService {
     const adjacentNodes = await this.routeRepository.getAdjacentNodes(
       notVisitedRoutes
     );
+    //TODO arrojar error si es que hay un unlinked path
+    // if (!adjacentNodes)
+    //   return Promise.reject(`Unlinked path ${notVisitedRoutes}`);
     return adjacentNodes.map((node) => {
       return {
         name: node.route.replace(origin, ''),
         distance: node.distance,
       };
     });
-    //TODO arrojar error si es que hay un unlinked path
-    // if (!adjacentNodes)
-    //   return Promise.reject(`Unlinked path ${notVisitedRoutes}`);
-    // const closestNode = adjacentNodes.sort(
-    //   (nodeA, nodeB) => nodeA.distance - nodeB.distance
-    // )[0];
-    // return {
-    //   closestNode: closestNode.route.replace(origin, ''),
-    //   distance: closestNode.distance,
-    // };
   }
 }
