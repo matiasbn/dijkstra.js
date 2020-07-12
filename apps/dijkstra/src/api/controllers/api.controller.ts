@@ -8,7 +8,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiService } from '../services/api.service';
-import { Nodes, File, ShortestPath } from '../validators/validator';
+import { Nodes, File, ShortestPath, AllPaths } from '../validators/validator';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('dijkstra')
@@ -27,6 +27,11 @@ export class ApiController {
 
   @Get('shortest-path')
   shortestPath(@Query() params: ShortestPath) {
-    return this.apiService.shortestPath(params.origin, params.destination);
+    return this.apiService.dijkstra(params.origin, params.destination);
+  }
+
+  @Get('all-paths')
+  allPaths(@Query() params: AllPaths) {
+    return this.apiService.dijkstra(params.origin);
   }
 }

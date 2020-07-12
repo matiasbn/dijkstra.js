@@ -27,3 +27,11 @@ export class ShortestPath {
   @IsNotEmpty()
   readonly destination: string;
 }
+
+export class AllPaths {
+  @Transform((origin) => origin.toUpperCase())
+  @IsAlpha()
+  @Length(1, 1)
+  @IsNotEmpty()
+  readonly origin: string;
+}
