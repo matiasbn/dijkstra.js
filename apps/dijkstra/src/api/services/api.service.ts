@@ -102,66 +102,68 @@ export class ApiService {
     });
   }
 
-  async dijkstra(origin: string, destination = null): Promise<Path[] | Path> {
-    try {
-      const storedPaths = destination
-        ? await this.pathRepository.findSinglePath(origin, destination)
-        : await this.pathRepository.findPaths(origin);
-      if (storedPaths.length) return destination ? storedPaths[0] : storedPaths;
-      const redisClient = await this.redisClient();
-      const notVisitedNodes = (await redisClient.get('nodes')).split(',');
-      const adjacentTable = notVisitedNodes.reduce((result, node) => {
-        result[node] = {
-          distance: node === origin ? 0 : Infinity,
-          previous: '',
-          route: '',
-        };
-        return result;
-      }, {});
+  async dijkstra(
+    origin: string,
+    destination: string = null
+  ): Promise<Path[] | Path> {
+    const storedPaths = destination
+      ? await this.pathRepository.findSinglePath(origin, destination)
+      : await this.pathRepository.findPaths(origin);
+    if (storedPaths.length) return destination ? storedPaths[0] : storedPaths;
+    const redisClient = await this.redisClient();
+    const notVisitedNodes = (await redisClient.get('nodes')).split(',');
+    const adjacencyTable = notVisitedNodes.reduce((result, node) => {
+      result[node] = {
+        distance: node === origin ? 0 : Infinity,
+        previous: '',
+        route: '',
+      };
+      return result;
+    }, {});
 
-      let currentNode = origin;
-      while (notVisitedNodes.length) {
-        notVisitedNodes.splice(notVisitedNodes.indexOf(currentNode), 1);
-        const adjacentNodes = await this.getAdjacentNodes(
-          currentNode,
-          notVisitedNodes
-        );
-        for (const adjacentNode of adjacentNodes) {
-          const adjacentIsClosest =
-            adjacentNode.distance + adjacentTable[currentNode].distance <
-            adjacentTable[adjacentNode.name].distance;
-          if (adjacentIsClosest) {
-            adjacentTable[adjacentNode.name].distance =
-              adjacentNode.distance + adjacentTable[currentNode].distance;
-            adjacentTable[adjacentNode.name].previous = currentNode;
-            adjacentTable[adjacentNode.name].route =
-              adjacentTable[currentNode].route + adjacentNode.name;
-          }
+    let currentNode = origin;
+    while (notVisitedNodes.length) {
+      notVisitedNodes.splice(notVisitedNodes.indexOf(currentNode), 1);
+      const adjacentNodes = await this.getAdjacentNodes(
+        currentNode,
+        notVisitedNodes
+      );
+      for (const adjacentNode of adjacentNodes) {
+        const adjacentIsClosest =
+          adjacentNode.distance + adjacencyTable[currentNode].distance <
+          adjacencyTable[adjacentNode.name].distance;
+        if (adjacentIsClosest) {
+          adjacencyTable[adjacentNode.name].distance =
+            adjacentNode.distance + adjacencyTable[currentNode].distance;
+          adjacencyTable[adjacentNode.name].previous = currentNode;
+          adjacencyTable[adjacentNode.name].route =
+            adjacencyTable[currentNode].route + adjacentNode.name;
         }
-        const closestNode = adjacentNodes.sort(
-          (nodeA, nodeB) => nodeA.distance - nodeB.distance
-        )[0]?.name;
-        currentNode = closestNode;
       }
-      const paths: Path[] = Object.keys(adjacentTable).map((key) => {
-        const node = adjacentTable[key];
-        return {
-          origin: origin,
-          destination: key,
-          route: origin + node.route,
-          distance: node.distance,
-        };
-      });
-      await this.pathRepository.createPaths(paths);
-      return destination
-        ? paths.find((node) => node.destination === destination)
-        : paths;
-    } catch (e) {
-      return e;
+      const closestNode = adjacentNodes.sort(
+        (nodeA, nodeB) => nodeA.distance - nodeB.distance
+      )[0]?.name;
+      currentNode = closestNode;
     }
+    const paths: Path[] = Object.keys(adjacencyTable).map((key) => {
+      const node = adjacencyTable[key];
+      return {
+        origin: origin,
+        destination: key,
+        route: origin + node.route,
+        distance: node.distance,
+      };
+    });
+    await this.pathRepository.createPaths(paths);
+    return destination
+      ? paths.find((node) => node.destination === destination)
+      : paths;
   }
 
-  async getAdjacentNodes(origin, notVisitedNodes): Promise<any> {
+  async getAdjacentNodes(
+    origin: string,
+    notVisitedNodes: string[]
+  ): Promise<{ name: string; distance: number }[]> {
     const notVisitedRoutes = notVisitedNodes.map((node) =>
       node < origin ? `${node}${origin}` : `${origin}${node}`
     );
