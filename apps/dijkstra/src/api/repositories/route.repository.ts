@@ -17,9 +17,9 @@ export class RouteRepository {
     return this.routeModel.deleteMany({});
   }
 
-  getAdjacentNodes(node: string): Promise<Route[]> {
+  getAdjacentNodes(nodes: string[]): Promise<Route[]> {
     return this.routeModel.find(
-      { route: new RegExp(node) },
+      { route: { $in: nodes } },
       { route: true, distance: true, _id: false }
     );
   }

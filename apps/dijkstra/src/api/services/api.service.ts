@@ -25,7 +25,7 @@ export class ApiService {
         if (alpha > letter) {
           const route: Route = {
             route: `${letter}${alpha}`,
-            distance: Math.floor(Math.random() * 100),
+            distance: Math.floor(Math.random() * 10),
           };
           distances.push(route);
         }
@@ -96,27 +96,73 @@ export class ApiService {
     });
   }
 
-  async shortestPath(origin: string, destination: string): Promise<{}> {
-    const redisClient = await this.redisClient();
-    const notVisitedNodes = (await redisClient.get('nodes')).split(',');
-    const adjacentNodes = await this.routeRepository.getAdjacentNodes(origin);
-    const adjacentTable = notVisitedNodes.reduce((result, node) => {
-      if (node === origin) return result;
-      const routeName = origin < node ? `${origin}${node}` : `${node}${origin}`;
-      const distance =
-        adjacentNodes.find((node) => node.route === routeName)?.distance ||
-        Infinity;
-      result[node] = {
-        distance,
-        previous: '',
+  async shortestPath(
+    origin: string,
+    destination: string
+  ): Promise<{} | string> {
+    try {
+      const redisClient = await this.redisClient();
+      const notVisitedNodes = (await redisClient.get('nodes')).split(',');
+      const adjacentTable = notVisitedNodes.reduce((result, node) => {
+        result[node] = {
+          distance: node === origin ? 0 : Infinity,
+          previous: '',
+          route: '',
+        };
+        return result;
+      }, {});
+      let currentNode = origin;
+      while (notVisitedNodes.length) {
+        notVisitedNodes.splice(notVisitedNodes.indexOf(currentNode), 1);
+        const adjacentNodes = await this.getAdjacentNodes(
+          currentNode,
+          notVisitedNodes
+        );
+        for (const adjacentNode of adjacentNodes) {
+          const adjacentIsClosest =
+            adjacentNode.distance + adjacentTable[currentNode].distance <
+            adjacentTable[adjacentNode.name].distance;
+          if (adjacentIsClosest) {
+            adjacentTable[adjacentNode.name].distance =
+              adjacentNode.distance + adjacentTable[currentNode].distance;
+            adjacentTable[adjacentNode.name].previous = currentNode;
+          }
+        }
+        const closestNode = adjacentNodes.sort(
+          (nodeA, nodeB) => nodeA.distance - nodeB.distance
+        )[0]?.name;
+        currentNode = closestNode;
+      }
+
+      return adjacentTable;
+    } catch (e) {
+      console.log(e);
+      return e;
+    }
+  }
+
+  async getAdjacentNodes(origin, notVisitedNodes): Promise<any> {
+    const notVisitedRoutes = notVisitedNodes.map((node) =>
+      node < origin ? `${node}${origin}` : `${origin}${node}`
+    );
+    const adjacentNodes = await this.routeRepository.getAdjacentNodes(
+      notVisitedRoutes
+    );
+    return adjacentNodes.map((node) => {
+      return {
+        name: node.route.replace(origin, ''),
+        distance: node.distance,
       };
-      return result;
-    }, {});
-    const visitedNodes = [];
-    const closestNode = adjacentNodes.sort(
-      (nodeA, nodeB) => nodeA.distance - nodeB.distance
-    )[0];
-    const shortestPaths = {};
-    return adjacentTable;
+    });
+    //TODO arrojar error si es que hay un unlinked path
+    // if (!adjacentNodes)
+    //   return Promise.reject(`Unlinked path ${notVisitedRoutes}`);
+    // const closestNode = adjacentNodes.sort(
+    //   (nodeA, nodeB) => nodeA.distance - nodeB.distance
+    // )[0];
+    // return {
+    //   closestNode: closestNode.route.replace(origin, ''),
+    //   distance: closestNode.distance,
+    // };
   }
 }
