@@ -50,9 +50,9 @@ export class ApiService {
     });
   }
 
-  async uploadFile(file): Promise<Route[]> {
+  async uploadFile(file: Buffer): Promise<Route[]> {
     const Nodes = new Set();
-    const distances = file.buffer
+    const distances = file
       .toString()
       .toUpperCase()
       .split('\n')

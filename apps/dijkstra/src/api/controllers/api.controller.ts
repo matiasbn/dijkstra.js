@@ -22,7 +22,9 @@ export class ApiController {
   @Post('upload-file')
   @UseInterceptors(FileInterceptor('file'))
   uploadFile(@UploadedFile() file: File) {
-    return this.apiService.uploadFile(file);
+    const buffer = file.buffer;
+    // if(buffer.match(/is/g)
+    return this.apiService.uploadFile(buffer);
   }
 
   @Get('shortest-path')

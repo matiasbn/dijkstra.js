@@ -11,7 +11,7 @@ export class Nodes {
 //TODO checkear si es que viene el file
 export class File {
   @IsDefined()
-  readonly buffer: object;
+  readonly buffer: Buffer;
 }
 
 export class ShortestPath {
