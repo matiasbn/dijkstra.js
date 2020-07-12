@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-
 import { ApiController } from './api.controller';
-import { AppService } from './api.service';
+import { ApiService } from '../services/api.service';
 
 describe('AppController', () => {
   let app: TestingModule;
@@ -9,14 +8,14 @@ describe('AppController', () => {
   beforeAll(async () => {
     app = await Test.createTestingModule({
       controllers: [ApiController],
-      providers: [AppService],
+      providers: [ApiService],
     }).compile();
   });
 
   describe('getData', () => {
     it('should return "Welcome to dijkstra!"', () => {
       const appController = app.get<ApiController>(ApiController);
-      expect(appController.getData()).toEqual({
+      expect(appController.generateData({ nodes: 5 })).toEqual({
         message: 'Welcome to dijkstra!',
       });
     });

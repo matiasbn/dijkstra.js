@@ -9,7 +9,7 @@ export class RouteRepository {
     @InjectModel(Route.name) private readonly routeModel: Model<Route>
   ) {}
 
-  createRoutes(routes: Route[]): Promise<[Route]> {
+  createRoutes(routes: Route[]): Promise<Route[]> {
     return this.routeModel.insertMany(routes);
   }
 

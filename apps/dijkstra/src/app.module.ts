@@ -5,6 +5,7 @@ import { ApiModule } from './api/api.module';
 import { MorganModule, MorganInterceptor } from 'nest-morgan';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
+import { RedisModule } from 'nestjs-redis';
 
 class ExtendedLogger extends Logger {
   write(message: string) {
@@ -15,6 +16,12 @@ class ExtendedLogger extends Logger {
 @Module({
   imports: [
     ApiModule,
+    RedisModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        url: configService.get<string>('REDIS_URI'),
+      }),
+    }),
     MorganModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,

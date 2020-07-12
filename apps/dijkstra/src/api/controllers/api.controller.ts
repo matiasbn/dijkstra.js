@@ -16,7 +16,7 @@ export class ApiController {
   constructor(private readonly apiService: ApiService) {}
 
   @Post('generate-data')
-  generateText(@Body() body: Nodes) {
+  generateData(@Body() body: Nodes) {
     return this.apiService.generateData(body.nodes);
   }
   @Post('upload-file')
