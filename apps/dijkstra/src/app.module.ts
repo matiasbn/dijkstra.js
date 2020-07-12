@@ -6,6 +6,7 @@ import { MorganModule, MorganInterceptor } from 'nest-morgan';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { RedisModule } from 'nestjs-redis';
+import * as Joi from '@hapi/joi';
 
 class ExtendedLogger extends Logger {
   write(message: string) {
@@ -15,7 +16,20 @@ class ExtendedLogger extends Logger {
 
 @Module({
   imports: [
-    ApiModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validationSchema: Joi.object({
+        NODE_ENV: Joi.string()
+          .valid('development', 'staging', 'production')
+          .default('development'),
+        MONGODB_URI: Joi.string().required(),
+        REDIS_URI: Joi.string().required(),
+      }),
+      validationOptions: {
+        allowUnknown: true,
+        abortEarly: true,
+      },
+    }),
     RedisModule.forRootAsync({
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
@@ -23,9 +37,6 @@ class ExtendedLogger extends Logger {
       }),
     }),
     MorganModule.forRoot(),
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -37,6 +48,7 @@ class ExtendedLogger extends Logger {
         uri: configService.get<string>('MONGODB_URI'),
       }),
     }),
+    ApiModule,
   ],
   controllers: [AppController],
   providers: [
