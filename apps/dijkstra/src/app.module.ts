@@ -6,6 +6,7 @@ import { MorganModule, MorganInterceptor } from 'nest-morgan';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { RedisModule } from 'nestjs-redis';
+import { MulterModule } from '@nestjs/platform-express';
 import * as Joi from '@hapi/joi';
 
 class ExtendedLogger extends Logger {
@@ -34,6 +35,11 @@ class ExtendedLogger extends Logger {
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         url: configService.get<string>('REDIS_URI'),
+      }),
+    }),
+    MulterModule.registerAsync({
+      useFactory: () => ({
+        dest: `${__dirname}/assets`,
       }),
     }),
     MorganModule.forRoot(),

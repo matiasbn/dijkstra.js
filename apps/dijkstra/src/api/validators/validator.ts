@@ -8,12 +8,6 @@ export class Nodes {
   readonly nodes: number;
 }
 
-//TODO checkear si es que viene el file
-export class File {
-  @IsDefined()
-  readonly buffer: Buffer;
-}
-
 export class ShortestPath {
   @Transform((origin) => origin.toUpperCase())
   @IsAlpha()

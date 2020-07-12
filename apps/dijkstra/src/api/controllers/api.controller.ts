@@ -2,29 +2,78 @@ import {
   Body,
   Controller,
   Get,
+  HttpException,
+  HttpStatus,
+  Inject,
   Post,
   Query,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiService } from '../services/api.service';
-import { Nodes, File, ShortestPath, AllPaths } from '../validators/validator';
+import { Nodes, ShortestPath, AllPaths } from '../validators/validator';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { token } from 'morgan';
+
+class DocumentFilter {
+  correctDocumentFilter = (req, file, callback) => {
+    if (!file.originalname.match(/\.(csv|txt)$/)) {
+      throw new HttpException(
+        {
+          status: HttpStatus.FORBIDDEN,
+          error: `Format not recognized`,
+        },
+        HttpStatus.FORBIDDEN
+      );
+      return callback(new Error('Only image files are allowed!'), false);
+    }
+    callback(null, true);
+  };
+}
 
 @Controller('dijkstra')
 export class ApiController {
   constructor(private readonly apiService: ApiService) {}
 
+  checkFile(file): boolean {
+    const format = file.originalname.split('.')[1];
+    if (!format.match(/(csv|txt)/)) return false;
+    if (!file.buffer) return false;
+    const lines = file.buffer
+      .toString()
+      .split('\n')
+      .filter((line) => line !== '');
+    for (const line of lines) {
+      const tokenized = line.split(',');
+      if (tokenized.length < 3) return false;
+      if (tokenized.some((token) => token === '')) return false;
+      if (tokenized.some((token, index) => index < 2 && token.length > 1))
+        return false;
+      if (typeof tokenized[0] !== 'string') return false;
+      if (typeof tokenized[1] !== 'string') return false;
+      if (isNaN(tokenized[2])) return false;
+    }
+    return true;
+  }
+
+  @Post('upload-file')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadFile(@UploadedFile() file) {
+    if (!this.checkFile(file))
+      throw new HttpException(
+        {
+          status: HttpStatus.FORBIDDEN,
+          error: `File format not recognized`,
+        },
+        HttpStatus.FORBIDDEN
+      );
+    const buffer = file.buffer;
+    return this.apiService.uploadFile(buffer);
+  }
+
   @Post('generate-data')
   generateData(@Body() body: Nodes) {
     return this.apiService.generateData(body.nodes);
-  }
-  @Post('upload-file')
-  @UseInterceptors(FileInterceptor('file'))
-  uploadFile(@UploadedFile() file: File) {
-    const buffer = file.buffer;
-    // if(buffer.match(/is/g)
-    return this.apiService.uploadFile(buffer);
   }
 
   @Get('shortest-path')

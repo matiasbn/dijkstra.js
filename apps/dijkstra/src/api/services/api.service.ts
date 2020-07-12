@@ -106,11 +106,11 @@ export class ApiService {
     origin: string,
     destination: string = null
   ): Promise<Path[] | Path> {
-    //TODO descomentar
-    // const storedPaths = destination
-    //   ? await this.pathRepository.findSinglePath(origin, destination)
-    //   : await this.pathRepository.findPaths(origin);
-    // if (storedPaths.length) return destination ? storedPaths[0] : storedPaths;
+    const storedOnMongoPaths = destination
+      ? await this.pathRepository.findSinglePath(origin, destination)
+      : await this.pathRepository.findPaths(origin);
+    if (storedOnMongoPaths.length)
+      return destination ? storedOnMongoPaths[0] : storedOnMongoPaths;
     const redisClient = await this.redisClient();
     const notVisitedNodes = (await redisClient.get('nodes')).split(',');
     const adjacencyTable = notVisitedNodes.reduce((result, node) => {
