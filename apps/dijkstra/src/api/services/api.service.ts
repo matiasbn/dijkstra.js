@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { RouteRepository } from '../repositories/route.repository';
 import { Route } from '../domain/routes.schema';
 import { RedisService } from 'nestjs-redis';
@@ -25,10 +25,12 @@ export class ApiService {
     const adjacentList = alphabet.reduce((distances, letter) => {
       Nodes.add(letter);
       for (const alpha of alphabet) {
-        if (alpha > letter) {
+        if (alpha > letter && Math.random() > 0.3) {
+          let value = 0;
+          while (!value) value = Math.floor(Math.random() * 10);
           const route: Route = {
             route: `${letter}${alpha}`,
-            distance: Math.floor(Math.random() * 10),
+            distance: value,
           };
           distances.push(route);
         }
@@ -106,13 +108,31 @@ export class ApiService {
     origin: string,
     destination: string = null
   ): Promise<Path[] | Path> {
+    const redisClient = await this.redisClient();
+    const notVisitedNodes = (await redisClient.get('nodes')).split(',');
+    if (!notVisitedNodes.find((node) => node === origin)) {
+      throw new HttpException(
+        {
+          status: HttpStatus.FORBIDDEN,
+          error: `${origin} is not a valid node, stored nodes: ${notVisitedNodes}`,
+        },
+        HttpStatus.FORBIDDEN
+      );
+    }
+    if (destination && !notVisitedNodes.find((node) => node === destination)) {
+      throw new HttpException(
+        {
+          status: HttpStatus.FORBIDDEN,
+          error: `${destination} is not a valid node, stored node: ${notVisitedNodes}`,
+        },
+        HttpStatus.FORBIDDEN
+      );
+    }
     const storedOnMongoPaths = destination
       ? await this.pathRepository.findSinglePath(origin, destination)
       : await this.pathRepository.findPaths(origin);
     if (storedOnMongoPaths.length)
       return destination ? storedOnMongoPaths[0] : storedOnMongoPaths;
-    const redisClient = await this.redisClient();
-    const notVisitedNodes = (await redisClient.get('nodes')).split(',');
     const adjacencyTable = notVisitedNodes.reduce((result, node) => {
       result[node] = {
         distance: node === origin ? 0 : Infinity,
