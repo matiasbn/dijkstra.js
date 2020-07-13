@@ -12,7 +12,7 @@ Data can be loaded both by uploading a text file or by generating it in a random
 * MongoDB
 * Redis
 
-## Setup locally
+## Local setup
 
 Install all the packages:
 ```bash
@@ -39,7 +39,8 @@ The documentation for this API can be found [here](https://documenter.getpostman
 
 ## example-file.txt
 
-An [example-file.txt](https://github.com/matiasbn/dijkstra.js/blob/master/example-file.txt) can be found at the root path of this project, which includes the correct format.
+An [example-file.txt](https://github.com/matiasbn/dijkstra.js/blob/master/example-file.txt) can be found at the root path of this project, which includes the correct format
+to upload data to the server.
 It can only support single letters nodes, comma separated, without limit on nodes distance.
 
 ## Dijkstra algorithm
@@ -55,3 +56,9 @@ You can start by loading your data using the example-file.txt file or by calling
 
 Then, you can use to the [shortest-path](https://documenter.getpostman.com/view/6223340/T17NbjqB?version=latest#e69ec7c5-f6a2-402e-9651-86d91c712484) endpoint to get the shortest path between 
 origin and destination, or you can use the [all-paths](https://documenter.getpostman.com/view/6223340/T17NbjqB?version=latest#914ec2f8-bab2-4d98-b898-9a1b2b996e06) to get all the shortest paths to/from origin node.
+
+## Uploading data with Postman
+
+An easy way to upload data to the `generate-data` endpoint is to use Postman.
+You have to use form-data, select 'File' on the key field and select the file to be uploaded.
+![alt text](https://github.com/matiasbn/dijkstra.js/blob/master/assets/postman-example.png?raw=true)
